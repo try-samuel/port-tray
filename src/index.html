@@ -673,7 +673,7 @@
             <div class="port-card">
               <div class="port-header">
                 <span class="port-number">${p.port}</span>
-                <button class="kill-btn" onclick="promptKill('${p.pid}', '${escapeHtml(p.process)}', '${p.port}', ${p.is_self})">
+                <button class="kill-btn" data-pid="${p.pid}" data-process="${escapeHtml(p.process)}" data-port="${p.port}" data-self="${p.is_self}">
                   ${p.is_self ? 'Self' : 'Kill'}
                 </button>
               </div>
@@ -695,6 +695,15 @@
           `).join('')}
         </div>
       `;
+
+      // Attach click handlers using event delegation
+      content.querySelectorAll('.kill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const { pid, process, port } = btn.dataset;
+          const isSelf = btn.dataset.self === 'true';
+          promptKill(pid, process, port, isSelf);
+        });
+      });
     }
 
     function promptKill(pid, process, port, isSelf) {
