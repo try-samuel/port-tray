@@ -16,33 +16,13 @@ pub struct PortInfo {
     pub is_self: bool,
 }
 
-/// Collect all PIDs in our process family (self, parent, siblings, children)
+/// Collect our own PID and direct children only
+/// (Siblings detection was causing issues in production where parent is launchd)
 fn get_family_pids() -> Vec<String> {
     let own_pid = std::process::id().to_string();
     let mut pids = vec![own_pid.clone()];
 
-    // Get parent PID
-    if let Ok(output) = Command::new("ps")
-        .args(["-o", "ppid=", "-p", &own_pid])
-        .output()
-    {
-        let ppid = String::from_utf8_lossy(&output.stdout).trim().to_string();
-        if !ppid.is_empty() {
-            pids.push(ppid.clone());
-
-            // Get all children of parent (our siblings, including dev server)
-            if let Ok(output) = Command::new("pgrep").args(["-P", &ppid]).output() {
-                for line in String::from_utf8_lossy(&output.stdout).lines() {
-                    let pid = line.trim().to_string();
-                    if !pid.is_empty() {
-                        pids.push(pid);
-                    }
-                }
-            }
-        }
-    }
-
-    // Also get our own children
+    // Get our own children only
     if let Ok(output) = Command::new("pgrep").args(["-P", &own_pid]).output() {
         for line in String::from_utf8_lossy(&output.stdout).lines() {
             let pid = line.trim().to_string();
