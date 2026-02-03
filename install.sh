@@ -61,17 +61,18 @@ install() {
     VERSION_NUM="${VERSION#v}"
     
     # Construct download URL based on platform
-    # Tauri v2 naming: Port Tray_<version>_<arch>.app.tar.gz (macOS)
-    #                  port-tray_<version>_amd64.deb (Linux)
+    # Actual Tauri naming from release:
+    #   macOS: Port.Tray_1.0.0_aarch64.dmg, Port.Tray_1.0.0_x64.dmg
+    #   Linux: Port.Tray_1.0.0_amd64.deb
     case "$PLATFORM" in
         macos_x86_64)
-            ASSET_NAME="Port Tray_${VERSION_NUM}_x64.app.tar.gz"
+            ASSET_NAME="Port.Tray_${VERSION_NUM}_x64.dmg"
             ;;
         macos_aarch64)
-            ASSET_NAME="Port Tray_${VERSION_NUM}_aarch64.app.tar.gz"
+            ASSET_NAME="Port.Tray_${VERSION_NUM}_aarch64.dmg"
             ;;
         linux_x86_64)
-            ASSET_NAME="port-tray_${VERSION_NUM}_amd64.deb"
+            ASSET_NAME="Port.Tray_${VERSION_NUM}_amd64.deb"
             ;;
     esac
     
@@ -87,19 +88,27 @@ install() {
     if [ "$OS" = "macos" ]; then
         info "Installing Port Tray.app..."
         
-        # Extract and move to /Applications
+        # Mount DMG
         cd "$TEMP_DIR"
-        tar -xzf "$ASSET_NAME"
+        MOUNT_POINT=$(hdiutil attach "$ASSET_NAME" -nobrowse -quiet | grep -o '/Volumes/.*' | head -1)
         
-        # Remove quarantine attribute (bypass Gatekeeper for unsigned app)
-        xattr -cr "Port Tray.app" 2>/dev/null || true
+        if [ -z "$MOUNT_POINT" ]; then
+            error "Failed to mount DMG"
+        fi
         
-        # Move to Applications
+        # Copy app to Applications
         if [ -d "/Applications/Port Tray.app" ]; then
             warn "Removing existing installation..."
             rm -rf "/Applications/Port Tray.app"
         fi
-        mv "Port Tray.app" /Applications/
+        
+        cp -R "$MOUNT_POINT/Port Tray.app" /Applications/
+        
+        # Unmount DMG
+        hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
+        
+        # Remove quarantine attribute (bypass Gatekeeper for unsigned app)
+        xattr -cr "/Applications/Port Tray.app" 2>/dev/null || true
         
         info "Installed to /Applications/Port Tray.app"
         
