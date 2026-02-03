@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default capabilities for Port Tray - allows shell access for lsof and kill commands","local":true,"windows":["main"],"permissions":["core:default","shell:allow-execute"]}}

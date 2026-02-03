@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Port Tray</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg-elevated: #141414;
+      --bg-hover: #1a1a1a;
+      --border: #262626;
+      --text: #fafafa;
+      --text-muted: #737373;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --danger: #ef4444;
+      --danger-hover: #f87171;
+      --success: #22c55e;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100%;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Titlebar drag region */
+    .titlebar {
+      height: 38px;
+      background: var(--bg);
+      -webkit-app-region: drag;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .titlebar h1 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* Toolbar */
+    .toolbar {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .search-box {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 12px 10px 40px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-muted);
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .port-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Port grid */
+    .port-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .port-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      transition: all 0.15s ease;
+      cursor: default;
+    }
+
+    .port-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .port-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .port-number {
+      font-size: 28px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .kill-btn {
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .kill-btn:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .port-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .port-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .port-label {
+      color: var(--text-muted);
+      width: 56px;
+      flex-shrink: 0;
+    }
+
+    .port-value {
+      color: var(--text);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* States */
+    .state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .state-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    .state-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .state-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error banner */
+    .error-banner {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin: 0 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .error-banner span {
+      font-size: 13px;
+      color: var(--danger);
+    }
+
+    .error-banner button {
+      padding: 6px 12px;
+      font-size: 12px;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideIn 0.2s ease;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .toast-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .toast-error {
+      background: var(--danger);
+      color: white;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 380px;
+      width: 90%;
+      transform: scale(0.95);
+      transition: transform 0.2s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .modal .btn-secondary {
+      background: var(--bg-hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .modal .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .modal .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #404040;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Titlebar -->
+    <div class="titlebar">
+      <h1>Port Tray</h1>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          id="searchInput"
+          placeholder="Search ports, processes, PIDs..."
+          autocomplete="off"
+        >
+      </div>
+      <div class="status">
+        <div class="status-dot"></div>
+        <span>Auto-refresh</span>
+      </div>
+      <button class="btn btn-primary" onclick="refreshPorts()" id="refreshBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+          <path d="M21 3v5h-5"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="errorBanner" class="error-banner" style="display: none;">
+      <span id="errorMessage"></span>
+      <button onclick="refreshPorts()">Retry</button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div id="portCount" class="port-count"></div>
+      <div id="content"></div>
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2>Kill Process?</h2>
+      <p id="modalMessage">Are you sure you want to terminate this process?</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirmKillBtn">Kill Process</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { invoke } = window.__TAURI__.core;
+
+    let ports = [];
+    let searchTerm = '';
+    let pendingKill = null;
+
+    const content = document.getElementById('content');
+    const portCount = document.getElementById('portCount');
+    const searchInput = document.getElementById('searchInput');
+    const errorBanner = document.getElementById('errorBanner');
+    const errorMessage = document.getElementById('errorMessage');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalMessage = document.getElementById('modalMessage');
+    const confirmKillBtn = document.getElementById('confirmKillBtn');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      refreshPorts();
+      setInterval(refreshPorts, 5000);
+
+      searchInput.addEventListener('input', (e) => {
+        searchTerm = e.target.value.toLowerCase();
+        renderPorts();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'r') {
+          e.preventDefault();
+          refreshPorts();
+        }
+        if (e.key === 'Escape') {
+          if (modalOverlay.classList.contains('active')) {
+            closeModal();
+          } else if (searchTerm) {
+            searchInput.value = '';
+            searchTerm = '';
+            renderPorts();
+          }
+        }
+        if (e.key === '/' && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+        }
+      });
+
+      confirmKillBtn.addEventListener('click', confirmKill);
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+    });
+
+    async function refreshPorts() {
+      refreshBtn.disabled = true;
+      if (ports.length === 0) showLoading();
+
+      try {
+        ports = await invoke('get_listening_ports');
+        hideError();
+        renderPorts();
+      } catch (error) {
+        showError(error);
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    function showLoading() {
+      content.innerHTML = `
+        <div class="state">
+          <div class="spinner"></div>
+          <div class="state-title">Scanning ports...</div>
+          <div class="state-desc">Looking for listening TCP connections</div>
+        </div>
+      `;
+      portCount.textContent = '';
+    }
+
+    function showError(error) {
+      errorBanner.style.display = 'flex';
+      errorMessage.textContent = error;
+    }
+
+    function hideError() {
+      errorBanner.style.display = 'none';
+    }
+
+    function showEmpty() {
+      content.innerHTML = `
+        <div class="state">
+          <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 12h8M12 8v8"/>
+          </svg>
+          <div class="state-title">No active ports</div>
+          <div class="state-desc">No TCP ports are currently listening</div>
+        </div>
+      `;
+      portCount.textContent = '';
+    }
+
+    function renderPorts() {
+      const filtered = ports.filter(p =>
+        p.port.includes(searchTerm) ||
+        p.process.toLowerCase().includes(searchTerm) ||
+        p.pid.includes(searchTerm) ||
+        p.user.toLowerCase().includes(searchTerm)
+      );
+
+      if (filtered.length === 0 && ports.length === 0) {
+        showEmpty();
+        return;
+      }
+
+      if (filtered.length === 0) {
+        content.innerHTML = `
+          <div class="state">
+            <svg class="state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <div class="state-title">No matches</div>
+            <div class="state-desc">No ports match "${escapeHtml(searchTerm)}"</div>
+          </div>
+        `;
+        portCount.textContent = `${ports.length} port${ports.length !== 1 ? 's' : ''} total`;
+        return;
+      }
+
+      portCount.textContent = searchTerm
+        ? `Showing ${filtered.length} of ${ports.length} ports`
+        : `${filtered.length} listening port${filtered.length !== 1 ? 's' : ''}`;
+
+      content.innerHTML = `
+        <div class="port-grid">
+          ${filtered.map(p => `
+            <div class="port-card">
+              <div class="port-header">
+                <span class="port-number">${p.port}</span>
+                <button class="kill-btn" onclick="promptKill('${p.pid}', '${escapeHtml(p.process)}', '${p.port}', ${p.is_self})">
+                  ${p.is_self ? 'Self' : 'Kill'}
+                </button>
+              </div>
+              <div class="port-info">
+                <div class="port-row">
+                  <span class="port-label">Process</span>
+                  <span class="port-value">${escapeHtml(p.process)}</span>
+                </div>
+                <div class="port-row">
+                  <span class="port-label">PID</span>
+                  <span class="port-value">${p.pid}</span>
+                </div>
+                <div class="port-row">
+                  <span class="port-label">User</span>
+                  <span class="port-value">${escapeHtml(p.user)}</span>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function promptKill(pid, process, port, isSelf) {
+      pendingKill = { pid, process, port, isSelf };
+      if (isSelf) {
+        modalMessage.textContent = `This is Port Tray's own process. Killing it will close this window and quit the app. Continue?`;
+        confirmKillBtn.textContent = 'Quit App';
+      } else {
+        modalMessage.textContent = `Terminate "${process}" (PID ${pid}) on port ${port}?`;
+        confirmKillBtn.textContent = 'Kill Process';
+      }
+      modalOverlay.classList.add('active');
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('active');
+      pendingKill = null;
+    }
+
+    async function confirmKill() {
+      if (!pendingKill) return;
+      const { pid, process, port, isSelf } = pendingKill;
+      closeModal();
+
+      if (isSelf) {
+        await invoke('quit_app');
+        return;
+      }
+
+      try {
+        await invoke('kill_port_process', { pid });
+        showToast(`Killed ${process} (PID ${pid}) on port ${port}`, 'success');
+        // Refresh after kill, then check if it respawned
+        setTimeout(async () => {
+          await refreshPorts();
+          if (ports.some(p => p.port === port)) {
+            showToast(`Port ${port} reappeared — process is managed by a service manager`, 'error');
+          }
+        }, 800);
+      } catch (error) {
+        showToast(error, 'error');
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.getElementById('toastContainer').appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

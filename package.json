@@ -1,0 +1,18 @@
+{
+  "name": "port-tray",
+  "version": "1.0.0",
+  "description": "A high-performance, minimalist desktop app to visualize and kill system ports",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/try-samuel/port-tray"
+  }
+}
