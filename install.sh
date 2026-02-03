@@ -90,9 +90,11 @@ install() {
         
         # Mount DMG
         cd "$TEMP_DIR"
-        MOUNT_POINT=$(hdiutil attach "$ASSET_NAME" -nobrowse -quiet | grep -o '/Volumes/.*' | head -1)
+        MOUNT_OUTPUT=$(hdiutil attach "$ASSET_NAME" -nobrowse 2>&1)
+        MOUNT_POINT=$(echo "$MOUNT_OUTPUT" | grep -o '/Volumes/[^"]*' | head -1 | xargs)
         
-        if [ -z "$MOUNT_POINT" ]; then
+        if [ -z "$MOUNT_POINT" ] || [ ! -d "$MOUNT_POINT" ]; then
+            echo "$MOUNT_OUTPUT"
             error "Failed to mount DMG"
         fi
         
