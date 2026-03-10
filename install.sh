@@ -123,7 +123,7 @@ EOF
         chmod +x "$INSTALL_DIR/$APP_NAME"
         
         # Create alias
-        ln -sf "$INSTALL_DIR/$APP_NAME" "$INSTALL_DIR/$ALIAS_NAME"
+        ln -sf "$APP_NAME" "$INSTALL_DIR/$ALIAS_NAME"
         
     elif [ "$OS" = "linux" ]; then
         info "Installing via dpkg..."
@@ -151,8 +151,8 @@ setup_path() {
         if ! grep -q "$INSTALL_DIR" "$RC_FILE" 2>/dev/null; then
             echo "" >> "$RC_FILE"
             echo "# Port Tray" >> "$RC_FILE"
-            echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$RC_FILE"
-            info "Added $INSTALL_DIR to PATH in $RC_FILE"
+            echo 'export PATH="$PATH:$HOME/.local/bin"' >> "$RC_FILE"
+            info "Added \$HOME/.local/bin to PATH in $RC_FILE"
             warn "Run 'source $RC_FILE' or restart your terminal"
         fi
     fi

@@ -497,7 +497,7 @@
         <div class="status-dot"></div>
         <span>Auto-refresh</span>
       </div>
-      <button class="btn btn-primary" onclick="refreshPorts()" id="refreshBtn">
+      <button class="btn btn-primary" id="refreshBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
           <path d="M21 3v5h-5"/>
@@ -509,7 +509,7 @@
     <!-- Error Banner -->
     <div id="errorBanner" class="error-banner" style="display: none;">
       <span id="errorMessage"></span>
-      <button onclick="refreshPorts()">Retry</button>
+      <button id="retryBtn">Retry</button>
     </div>
 
     <!-- Main Content -->
@@ -528,7 +528,7 @@
       <h2>Kill Process?</h2>
       <p id="modalMessage">Are you sure you want to terminate this process?</p>
       <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
         <button class="btn btn-danger" id="confirmKillBtn">Kill Process</button>
       </div>
     </div>
@@ -550,6 +550,8 @@
     const modalMessage = document.getElementById('modalMessage');
     const confirmKillBtn = document.getElementById('confirmKillBtn');
     const refreshBtn = document.getElementById('refreshBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
 
     document.addEventListener('DOMContentLoaded', async () => {
       refreshPorts();
@@ -581,6 +583,9 @@
       });
 
       confirmKillBtn.addEventListener('click', confirmKill);
+      refreshBtn.addEventListener('click', refreshPorts);
+      retryBtn.addEventListener('click', refreshPorts);
+      cancelBtn.addEventListener('click', closeModal);
       modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) closeModal();
       });
