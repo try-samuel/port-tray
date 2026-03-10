@@ -1,6 +1,6 @@
 {
   "name": "port-tray",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A high-performance, minimalist desktop app to visualize and kill system ports",
   "scripts": {
     "tauri": "tauri",

@@ -1,6 +1,6 @@
 [package]
 name = "port-tray"
-version = "1.0.1"
+version = "1.0.3"
 description = "A high-performance desktop app to visualize and kill system ports"
 authors = ["Port Tray Contributors"]
 license = "MIT"
